@@ -1,0 +1,14 @@
+# Core
+mlflow>=2.10.0
+dvc>=3.0.0
+pyyaml>=6.0
+click>=8.1.0
+
+# Examples / end-to-end
+scikit-learn>=1.3
+numpy>=1.24
+
+# Dev / testing
+pytest>=7.4
+pytest-cov>=4.1
+ruff>=0.3
