@@ -210,3 +210,43 @@ class KubernetesDeployer(BaseDeployer):
     @staticmethod
     def _deployment_name(config: DeploymentConfig) -> str:
         return f"{config.model_name}-{config.environment}"
+
+
+# ---------------------------------------------------------------------------
+# Deployment manager — orchestrates multiple backends
+# ---------------------------------------------------------------------------
+
+class DeploymentManager:
+    """Register deployers by name and dispatch to the right one.
+
+    Usage::
+
+        manager = DeploymentManager()
+        manager.register("local", LocalDeployer())
+        manager.register("k8s",   KubernetesDeployer(namespace="prod"))
+
+        endpoint = manager.deploy("local", config)
+        manager.undeploy("local", "fraud-model-v1-staging")
+    """
+
+    def __init__(self) -> None:
+        self._deployers: dict[str, BaseDeployer] = {}
+
+    def register(self, name: str, deployer: BaseDeployer) -> None:
+        self._deployers[name] = deployer
+
+    def deploy(self, backend: str, config: DeploymentConfig) -> str:
+        return self._get(backend).deploy(config)
+
+    def undeploy(self, backend: str, deployment_name: str) -> None:
+        self._get(backend).undeploy(deployment_name)
+
+    def status(self, backend: str, deployment_name: str) -> dict[str, Any]:
+        return self._get(backend).status(deployment_name)
+
+    def _get(self, name: str) -> BaseDeployer:
+        try:
+            return self._deployers[name]
+        except KeyError:
+            available = list(self._deployers)
+            raise KeyError(f"Unknown backend {name!r}. Registered: {available}") from None
